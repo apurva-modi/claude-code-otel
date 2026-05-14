@@ -1,0 +1,62 @@
+{
+  "name": "claude-code-otel",
+  "version": "1.0.0",
+  "description": "Zero-config OpenTelemetry pipeline: Claude Code → ClickHouse",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "opentelemetry",
+    "otel",
+    "clickhouse",
+    "observability",
+    "telemetry"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/claude-code-otel.git"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/claude-code-otel#readme",
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/claude-code-otel/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "claude-code-otel": "./dist/bin/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "ts-node src/bin/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@clickhouse/client": "^1.0.0",
+    "chalk": "^4.1.2",
+    "commander": "^12.0.0",
+    "inquirer": "^8.2.6",
+    "js-yaml": "^4.1.0",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^8.2.10",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.6"
+  }
+}
