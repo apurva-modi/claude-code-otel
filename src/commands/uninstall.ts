@@ -4,6 +4,7 @@ import inquirer from 'inquirer';
 import { isRunning, stop } from '../lib/collector.js';
 import { unpatchShell } from '../lib/shell.js';
 import { CONFIG_DIR } from '../lib/config.js';
+import { disableAutostart, autostartEnabled } from './autostart.js';
 
 export async function uninstall(): Promise<void> {
   console.log(chalk.bold.cyan('\n🗑  claude-code-otel uninstall\n'));
@@ -22,6 +23,7 @@ export async function uninstall(): Promise<void> {
     return;
   }
 
+  if (autostartEnabled()) disableAutostart();
   if (isRunning()) stop();
 
   const unpatched = unpatchShell();

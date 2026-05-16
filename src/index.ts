@@ -1,6 +1,7 @@
 export { setup } from './commands/setup.js';
 export { status } from './commands/status.js';
 export { uninstall } from './commands/uninstall.js';
+export { enableAutostart, disableAutostart, autostartEnabled } from './commands/autostart.js';
 export { start, stop, isRunning, writeCollectorConfig } from './lib/collector.js';
 export { patchShell, unpatchShell } from './lib/shell.js';
 export { saveConfig, loadConfig, configExists } from './lib/config.js';
