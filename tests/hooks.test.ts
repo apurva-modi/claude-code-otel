@@ -84,6 +84,11 @@ describe('hooks: install / uninstall', () => {
     install();
     const settings = JSON.parse(fs.readFileSync(CLAUDE_SETTINGS, 'utf8'));
     const pre = settings.hooks.PreToolUse as any[];
+    // No entry should have an empty hooks array
+    for (const entry of pre) {
+      expect((entry.hooks ?? []).length).toBeGreaterThan(0);
+    }
+    // Exactly one span_emitter command
     const emitters = pre.flatMap((e: any) => e.hooks).filter((h: any) => h.command?.includes('span_emitter'));
     expect(emitters.length).toBe(1);
   });

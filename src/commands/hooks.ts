@@ -258,7 +258,7 @@ export function install(): void {
     settings.hooks[hookType] = (settings.hooks[hookType] as any[]).map((entry: any) => ({
       ...entry,
       hooks: (entry.hooks ?? []).filter((h: any) => !h.command?.includes('span_emitter')),
-    })).filter((entry: any) => (entry.hooks ?? []).length > 0 || (entry.matcher !== undefined && entry.matcher !== ''));
+    })).filter((entry: any) => (entry.hooks ?? []).length > 0);
 
     const newEntry = hookType === 'Stop'
       ? { hooks: [{ type: 'command', command }] }
