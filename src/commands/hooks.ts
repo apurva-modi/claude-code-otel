@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import chalk from 'chalk';
 
 const CONFIG_DIR = path.join(os.homedir(), '.claude-code-otel');
 const HOOKS_DIR = path.join(CONFIG_DIR, 'hooks');
@@ -234,4 +235,64 @@ export function writeScript(): void {
   fs.mkdirSync(HOOKS_DIR, { recursive: true });
   fs.writeFileSync(EMITTER_SCRIPT, EMITTER_PY, 'utf8');
   fs.chmodSync(EMITTER_SCRIPT, 0o755);
+}
+
+const CLAUDE_SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
+const HOOK_TYPES = ['PreToolUse', 'PostToolUse', 'Stop'] as const;
+
+export function install(): void {
+  writeScript();
+  fs.mkdirSync(path.dirname(CLAUDE_SETTINGS), { recursive: true });
+
+  let settings: Record<string, any> = {};
+  if (fs.existsSync(CLAUDE_SETTINGS)) {
+    try { settings = JSON.parse(fs.readFileSync(CLAUDE_SETTINGS, 'utf8')); } catch { /* start fresh */ }
+  }
+  settings.hooks = settings.hooks ?? {};
+
+  const command = `python3 ${EMITTER_SCRIPT}`;
+
+  for (const hookType of HOOK_TYPES) {
+    settings.hooks[hookType] = settings.hooks[hookType] ?? [];
+    // Remove any existing span_emitter entry to avoid duplicates
+    settings.hooks[hookType] = (settings.hooks[hookType] as any[]).map((entry: any) => ({
+      ...entry,
+      hooks: (entry.hooks ?? []).filter((h: any) => !h.command?.includes('span_emitter')),
+    })).filter((entry: any) => (entry.hooks ?? []).length > 0 || (entry.matcher !== undefined && entry.matcher !== ''));
+
+    const newEntry = hookType === 'Stop'
+      ? { hooks: [{ type: 'command', command }] }
+      : { matcher: '', hooks: [{ type: 'command', command }] };
+
+    settings.hooks[hookType].push(newEntry);
+  }
+
+  fs.writeFileSync(CLAUDE_SETTINGS, JSON.stringify(settings, null, 2), 'utf8');
+
+  console.log(chalk.green('✓ Hooks installed'));
+  console.log(chalk.dim(`  Script: ${EMITTER_SCRIPT}`));
+  console.log(chalk.dim(`  Settings: ${CLAUDE_SETTINGS}`));
+  console.log(chalk.bold('\n  Restart Claude Code for hooks to take effect.\n'));
+}
+
+export function uninstall(): void {
+  if (fs.existsSync(EMITTER_SCRIPT)) fs.unlinkSync(EMITTER_SCRIPT);
+
+  if (!fs.existsSync(CLAUDE_SETTINGS)) return;
+  let settings: Record<string, any> = {};
+  try { settings = JSON.parse(fs.readFileSync(CLAUDE_SETTINGS, 'utf8')); } catch { return; }
+
+  for (const hookType of HOOK_TYPES) {
+    if (!settings.hooks?.[hookType]) continue;
+    settings.hooks[hookType] = (settings.hooks[hookType] as any[])
+      .map((entry: any) => ({
+        ...entry,
+        hooks: (entry.hooks ?? []).filter((h: any) => !h.command?.includes('span_emitter')),
+      }))
+      .filter((entry: any) => (entry.hooks ?? []).length > 0);
+    if (settings.hooks[hookType].length === 0) delete settings.hooks[hookType];
+  }
+
+  fs.writeFileSync(CLAUDE_SETTINGS, JSON.stringify(settings, null, 2), 'utf8');
+  console.log(chalk.green('✓ Hooks uninstalled'));
 }
