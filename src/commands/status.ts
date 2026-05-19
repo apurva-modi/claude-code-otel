@@ -60,10 +60,11 @@ export async function status(): Promise<void> {
       console.log(chalk.bold('Traces (last 1h):'));
       console.log(chalk.dim('  Service                  Spans   Avg ms   Errors   Last seen'));
       for (const r of traceRows) {
-        const errStr = r.errors !== '0'
-          ? chalk.red(r.errors.padEnd(9))
-          : chalk.dim(r.errors.padEnd(9));
-        console.log(`  ${r.ServiceName.padEnd(25)}${r.spans.padEnd(8)}${r.avg_ms.padEnd(9)}${errStr}${chalk.dim(r.last_seen)}`);
+        const errVal = String(r.errors);
+        const errStr = errVal !== '0'
+          ? chalk.red(errVal.padEnd(9))
+          : chalk.dim(errVal.padEnd(9));
+        console.log(`  ${String(r.ServiceName).padEnd(25)}${String(r.spans).padEnd(8)}${String(r.avg_ms).padEnd(9)}${errStr}${chalk.dim(String(r.last_seen))}`);
       }
     } else {
       console.log(chalk.dim('  No traces yet in the last hour.'));

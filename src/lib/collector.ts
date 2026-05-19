@@ -66,16 +66,27 @@ service:
 }
 
 export function isRunning(): boolean {
-  if (!fs.existsSync(PID_FILE)) return false;
-  const pid = parseInt(fs.readFileSync(PID_FILE, 'utf8').trim(), 10);
-  if (isNaN(pid)) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    fs.unlinkSync(PID_FILE);
-    return false;
+  if (fs.existsSync(PID_FILE)) {
+    const pid = parseInt(fs.readFileSync(PID_FILE, 'utf8').trim(), 10);
+    if (!isNaN(pid)) {
+      try {
+        process.kill(pid, 0);
+        return true;
+      } catch {
+        fs.unlinkSync(PID_FILE);
+      }
+    }
   }
+  // Fallback: check if anything is listening on port 4317
+  try {
+    const out = execSync('lsof -ti :4317 2>/dev/null', { encoding: 'utf8' }).trim();
+    if (out) {
+      // Write the PID file so subsequent calls and start() are consistent
+      fs.writeFileSync(PID_FILE, out.split('\n')[0], 'utf8');
+      return true;
+    }
+  } catch { /* lsof not available or nothing listening */ }
+  return false;
 }
 
 export async function start(): Promise<void> {
