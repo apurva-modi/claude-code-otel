@@ -38,7 +38,7 @@ describe('hooks: writeScript', () => {
     writeScript();
     const input = JSON.stringify({ hook_event_name: 'Unknown', session_id: 'test-sid' });
     expect(() =>
-      execSync(`echo '${input}' | python3 ${EMITTER_SCRIPT_CONST}`, { timeout: 3000 })
+      execSync(`python3 ${EMITTER_SCRIPT_CONST}`, { input, timeout: 3000, encoding: 'utf8' })
     ).not.toThrow();
   });
 });

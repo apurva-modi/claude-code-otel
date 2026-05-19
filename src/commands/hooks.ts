@@ -1,15 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import chalk from 'chalk';
 
 const CONFIG_DIR = path.join(os.homedir(), '.claude-code-otel');
 const HOOKS_DIR = path.join(CONFIG_DIR, 'hooks');
 export const EMITTER_SCRIPT = path.join(HOOKS_DIR, 'span_emitter.py');
-const SESSIONS_DIR = path.join(CONFIG_DIR, 'sessions');
-const CLAUDE_SETTINGS = path.join(os.homedir(), '.claude', 'settings.json');
-
-const HOOK_TYPES = ['PreToolUse', 'PostToolUse', 'Stop'] as const;
 
 const EMITTER_PY = `#!/usr/bin/env python3
 """
@@ -151,15 +146,13 @@ def handle_post(event: dict) -> None:
 
     attrs = [
         attr('gen_ai.tool.name', tool_name),
-        attr('routeiq.tool.success', str(success).lower()),
-        attr('routeiq.tool.retry_count', '0'),
-        attr('routeiq.loop.detected', str(loop_detected).lower()),
+        attr('routeiq.tool.success', success),
+        attr('routeiq.loop.detected', loop_detected),
         attr('routeiq.same_tool_count', str(consecutive)),
         attr('routeiq.session.id', sid),
         attr('claude_code.tool.exit_code', str(exit_code)),
         attr('claude_code.tool.input_size', str(len(json.dumps(tool_input)))),
         attr('claude_code.tool.output_size', str(len(str(tool_response)))),
-        attr('claude_code.tool.decision', 'accept'),
     ]
 
     if tool_name == 'Bash' and 'command' in tool_input:
@@ -207,7 +200,7 @@ def handle_stop(event: dict) -> None:
             attr('routeiq.agent.id', SERVICE_NAME),
             attr('routeiq.session.id', sid),
             attr('routeiq.completion.reason', stop_reason),
-            attr('routeiq.task.success', str(task_success).lower()),
+            attr('routeiq.task.success', task_success),
             attr('routeiq.session.turn_count', str(state.get('tool_count', 0))),
         ],
         'status': {'code': 1},
