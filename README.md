@@ -19,12 +19,15 @@ claude-code-otel setup
 # 2. Start the collector daemon
 claude-code-otel start
 
-# 3. Reload your shell and start coding
+# 3. Install hooks to emit traces per tool call and session
+claude-code-otel hooks
+
+# 4. Reload your shell and restart Claude Code
 source ~/.zshrc
 claude
 ```
 
-That's it. Every Claude Code session now streams telemetry into your ClickHouse tables.
+That's it. Every Claude Code session now streams logs, metrics, and traces into your ClickHouse tables.
 
 ---
 
@@ -75,6 +78,20 @@ ClickHouse › yourhost:8443/default
   Metrics (last 1h): claude_code.token.usage, claude_code.cost.usage, claude_code.active_time.total
 ```
 
+### `claude-code-otel hooks`
+
+Installs Claude Code hooks that emit an OTel trace span for every tool call and session. Spans land in `otel_traces` in ClickHouse with attributes like `claude_code.tool.success`, `claude_code.tool.loop_detected`, `claude_code.session.id`, etc.
+
+```bash
+# Install hooks (patches ~/.claude/settings.json)
+claude-code-otel hooks
+
+# Remove hooks
+claude-code-otel hooks --uninstall
+```
+
+> Restart Claude Code after installing hooks for them to take effect.
+
 ### `claude-code-otel uninstall`
 
 Stops the daemon, removes `~/.claude-code-otel/`, and cleans the env var block from your shell rc files.
@@ -87,10 +104,24 @@ Stops the daemon, removes `~/.claude-code-otel/`, and cleans the env var block f
 |---|---|
 | `otel_logs` | One row per event: `api_request`, `tool_decision`, `tool_result`, `user_prompt` |
 | `otel_metrics_sum` | Token counts (`claude_code.token.usage`), cost (`claude_code.cost.usage`), active time |
+| `otel_traces` | One span per tool call (`tool.call`) and per session (`agent.session`) — requires `hooks` |
 
 Each log row includes `session.id`, `user.email`, `model`, `cost_usd`, `duration_ms`, and more as `LogAttributes`.
 
-> **Note:** Claude Code does not currently emit trace spans, so `otel_traces` will remain empty. Logs and metrics capture the full picture.
+Trace spans (via hooks) include:
+
+| Attribute | Description |
+|---|---|
+| `claude_code.session.id` | Claude Code session ID |
+| `claude_code.tool.success` | Whether the tool call succeeded |
+| `claude_code.tool.loop_detected` | True when the same tool is called 5+ times consecutively |
+| `claude_code.tool.same_tool_count` | Consecutive count for the current tool |
+| `claude_code.tool.exit_code` | Exit code (Bash tools) |
+| `claude_code.tool.command` | Command string (Bash tools, truncated to 500 chars) |
+| `claude_code.tool.file_path` | File path (Read/Write/Edit tools) |
+| `claude_code.session.completion_reason` | Why the session ended (`end_turn`, etc.) |
+| `claude_code.session.task_success` | True when session ended normally |
+| `claude_code.session.turn_count` | Number of tool calls in the session |
 
 All tables use the standard OpenTelemetry schema.
 
@@ -100,6 +131,9 @@ All tables use the standard OpenTelemetry schema.
 
 ```
 Claude Code  ──(OTLP/gRPC)──▶  otelcol-contrib (localhost:4317)  ──▶  ClickHouse
+     │
+     └── hooks (PreToolUse/PostToolUse/Stop)
+              └──(OTLP/HTTP)──▶  otelcol-contrib (localhost:4318)  ──▶  ClickHouse (otel_traces)
 ```
 
 `claude-code-otel setup` writes these env vars into your shell rc:
