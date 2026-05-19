@@ -80,7 +80,6 @@ def attr(key: str, value) -> dict:
 def emit_spans(spans: list) -> None:
     resource_attrs = [
         attr('service.name', SERVICE_NAME),
-        attr('routeiq.agent.id', SERVICE_NAME),
     ]
     payload = {
         'resourceSpans': [{
@@ -147,10 +146,10 @@ def handle_post(event: dict) -> None:
 
     attrs = [
         attr('gen_ai.tool.name', tool_name),
-        attr('routeiq.tool.success', success),
-        attr('routeiq.loop.detected', loop_detected),
-        attr('routeiq.same_tool_count', str(consecutive)),
-        attr('routeiq.session.id', sid),
+        attr('claude_code.tool.success', success),
+        attr('claude_code.tool.loop_detected', loop_detected),
+        attr('claude_code.tool.same_tool_count', str(consecutive)),
+        attr('claude_code.session.id', sid),
         attr('claude_code.tool.exit_code', str(exit_code)),
         attr('claude_code.tool.input_size', str(len(json.dumps(tool_input)))),
         attr('claude_code.tool.output_size', str(len(str(tool_response)))),
@@ -198,11 +197,10 @@ def handle_stop(event: dict) -> None:
         'endTimeUnixNano': str(end_ns),
         'kind': 1,
         'attributes': [
-            attr('routeiq.agent.id', SERVICE_NAME),
-            attr('routeiq.session.id', sid),
-            attr('routeiq.completion.reason', stop_reason),
-            attr('routeiq.task.success', task_success),
-            attr('routeiq.session.turn_count', str(state.get('tool_count', 0))),
+            attr('claude_code.session.id', sid),
+            attr('claude_code.session.completion_reason', stop_reason),
+            attr('claude_code.session.task_success', task_success),
+            attr('claude_code.session.turn_count', str(state.get('tool_count', 0))),
         ],
         'status': {'code': 1},
     }])
